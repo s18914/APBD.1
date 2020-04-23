@@ -63,55 +63,37 @@ namespace APBD._1.Services
 
         public AddPrescriptionResponse AddPrescription(AddPrescriptionRequest request)
         {
-            var an = new AddPrescriptionResponse();
-
-            using (SqlConnection con = new SqlConnection(ConString))
-            using (SqlCommand com = new SqlCommand())
+            if (request.DueDate <= request.Date)
             {
-                con.Open();
-                com.Connection = con;
-                var tran = con.BeginTransaction();
-
-                //czy doktor istnieje
-                com.CommandText = "select IdDoctor from Doctor where IdDoctor = @IdDoctor";
-                com.Parameters.AddWithValue("IdDoctor", request.IdDoctor);
-
-
-                var dr = com.ExecuteReader();
-                if (!dr.Read())
-                {
-                    tran.Rollback();
-                    return null;
-                }
-                //czy pacjent istnieje
-                com.CommandText = "select IdPatient from Patient where IdPatient = @IdPatient";
-                com.Parameters.AddWithValue("IdPatient", request.IdPatient);
-
-
-                if (!dr.Read())
-                {
-                    tran.Rollback();
-                    return null;
-                }
-
-
-                string date = (string)dr["date"];
-                string dueDate = (string)dr["dueDate"];
-                //dodaje zwierze
-                com.CommandText = "insert into Animal() values ...";
-
-                com.ExecuteNonQuery();
-
-
-                tran.Commit();
-
+                return null;
             }
 
-            // var response = new AddAnimalResponse();
-            //response.LastName = st.Last name //itd...
-            //potem return Ok(response)
+            using (var connection = new SqlConnection(Environment.GetEnvironmentVariable("DB_CONNECTION")))
+            using (var command = new SqlCommand())
+            {
+                command.Connection = connection;
 
-            return an;
+                command.CommandText = "insert into Prescription(date, duedate, idpatient, iddoctor) values (@date, @dueDate, @patient, @doctor);"
+                    + "select SCOPE_IDENTITY()";
+
+                command.Parameters.AddWithValue("date", request.Date);
+                command.Parameters.AddWithValue("dueDate", request.DueDate);
+                command.Parameters.AddWithValue("patient", request.IdPatient);
+                command.Parameters.AddWithValue("doctor", request.IdDoctor);
+
+
+                connection.Open();
+                var id = Convert.ToInt32(command.ExecuteScalar());
+
+                return new AddPrescriptionResponse
+                {
+                    IdPrescription = id,
+                    Date = request.Date,
+                    DueDate = request.DueDate,
+                    IdDoctor = request.IdDoctor,
+                    IdPatient = request.IdPatient
+                };
+            }
         }
     }
 

@@ -39,7 +39,7 @@ namespace APBD._1.Controllers
         {
             var response = new AddPrescriptionResponse();
 
-            if(_dbService.AddPrescription(AddPrescriptionRequest request))
+            if(_dbService.AddPrescription(request))
             {
                 return Ok("dodano");
             }
